@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build:prod",
+  "outputDirectory": "dist/substation-architect/browser",
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
