@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { jsPDF } from 'jspdf';
 
 // --- Types & Interfaces ---
 
@@ -482,12 +483,20 @@ export class IconComponent implements OnInit {
                 [ngClass]="theme() === 'dark' ? 'bg-[#0a0a0a] border-[#1a1a1a]' : 'bg-white border-slate-200'"
               >
                 <button
-                  (click)="exportAs('jpg')"
+                  (click)="exportAs('png')"
                   class="flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-bold transition-colors text-left"
                   [ngClass]="theme() === 'dark' ? 'hover:bg-[#1a1a1a] text-neutral-300' : 'hover:bg-slate-100 text-neutral-700'"
                 >
                   <app-icon name="image" size="14"></app-icon>
-                  JPG Image
+                  PNG Image
+                </button>
+                <button
+                  (click)="exportAs('jpeg')"
+                  class="flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-bold transition-colors text-left"
+                  [ngClass]="theme() === 'dark' ? 'hover:bg-[#1a1a1a] text-neutral-300' : 'hover:bg-slate-100 text-neutral-700'"
+                >
+                  <app-icon name="image" size="14"></app-icon>
+                  JPEG Image
                 </button>
                 <button
                   (click)="exportAs('pdf')"
@@ -495,32 +504,7 @@ export class IconComponent implements OnInit {
                   [ngClass]="theme() === 'dark' ? 'hover:bg-[#1a1a1a] text-neutral-300' : 'hover:bg-slate-100 text-neutral-700'"
                 >
                   <app-icon name="file" size="14"></app-icon>
-                  Print / PDF
-                </button>
-                <button
-                  (click)="exportAs('excel')"
-                  class="flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-bold transition-colors text-left"
-                  [ngClass]="theme() === 'dark' ? 'hover:bg-[#1a1a1a] text-neutral-300' : 'hover:bg-slate-100 text-neutral-700'"
-                >
-                  <app-icon name="table" size="14"></app-icon>
-                  Excel (CSV)
-                </button>
-                <div class="h-px bg-[#262626] mx-2 my-1"></div>
-                <button
-                  (click)="exportAs('json')"
-                  class="flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-bold transition-colors text-left"
-                  [ngClass]="theme() === 'dark' ? 'hover:bg-[#1a1a1a] text-neutral-300' : 'hover:bg-slate-100 text-neutral-700'"
-                >
-                  <app-icon name="file" size="14"></app-icon>
-                  Save JSON
-                </button>
-                <button
-                  (click)="exportAs('dxf')"
-                  class="flex items-center gap-3 w-full p-2.5 rounded-xl text-xs font-bold transition-colors text-left"
-                  [ngClass]="theme() === 'dark' ? 'hover:bg-[#1a1a1a] text-neutral-300' : 'hover:bg-slate-100 text-neutral-700'"
-                >
-                  <app-icon name="code" size="14"></app-icon>
-                  CAD (DXF)
+                  PDF
                 </button>
               </div>
             }
@@ -568,6 +552,9 @@ export class IconComponent implements OnInit {
                       <div
                         draggable="true"
                         (dragstart)="onDragStart($event, type)"
+                        (mouseenter)="showTooltip(type, $event)"
+                        (mousemove)="moveTooltip($event)"
+                        (mouseleave)="hideTooltip()"
                         class="relative flex flex-col items-center justify-center p-4 border rounded-2xl cursor-grab active:cursor-grabbing transition-all hover:scale-105 group bg-[var(--panel-bg)] border-[var(--panel-border)] hover:border-[var(--accent)] active:border-[var(--accent)] active:bg-[var(--hover-bg)]"
                       >
                         <div class="mb-3 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
@@ -578,17 +565,6 @@ export class IconComponent implements OnInit {
                         >
                           {{ getComponentLabel(type) }}
                         </span>
-                        <div
-                          class="pointer-events-none absolute left-1/2 top-full z-50 mt-3 w-56 -translate-x-1/2 rounded-xl border border-[var(--tooltip-border)] bg-[var(--tooltip-bg)] px-3 py-2 text-[10px] font-semibold text-[var(--tooltip-text)] opacity-0 transition-opacity duration-150 delay-0 group-hover:opacity-100 group-hover:delay-150 shadow-xl"
-                          role="tooltip"
-                        >
-                          <div class="text-[11px] font-black tracking-wide text-[var(--text-primary)]">
-                            {{ getComponentInfo(type).name }}
-                          </div>
-                          <div class="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">
-                            {{ getComponentInfo(type).description }}
-                          </div>
-                        </div>
                       </div>
                     }
                   </div>
@@ -627,7 +603,7 @@ export class IconComponent implements OnInit {
                 >
                   <!-- Selection Box & Resizers -->
                   @if (isSelected(comp.id)) {
-                    <g>
+                    <g data-export-exclude="true">
                       <rect
                         [attr.x]="comp.type === 'busbar' ? -5 : -35"
                         [attr.y]="-35"
@@ -927,6 +903,7 @@ export class IconComponent implements OnInit {
                         <g [attr.transform]="'rotate(' + -comp.rotation + ')'">
                           @if (isSelected(comp.id)) {
                             <rect
+                              data-export-exclude="true"
                               x="-35"
                               y="-12"
                               width="70"
@@ -957,7 +934,7 @@ export class IconComponent implements OnInit {
                       <!-- Ports -->
                       @if (isSelected(comp.id)) {
                         @for (p of getPorts(comp); track p.id) {
-                          <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="2.5 / comp.scale" fill="#22c55e" vector-effect="non-scaling-stroke" />
+                          <circle data-export-exclude="true" [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="2.5 / comp.scale" fill="#22c55e" vector-effect="non-scaling-stroke" />
                         }
                       }
                     </g>
@@ -967,7 +944,7 @@ export class IconComponent implements OnInit {
 
               <!-- Snap Indicator -->
               @if (snapIndicator()) {
-                <g [attr.transform]="'translate(' + snapIndicator()!.x + ', ' + snapIndicator()!.y + ')'">
+                <g data-export-exclude="true" [attr.transform]="'translate(' + snapIndicator()!.x + ', ' + snapIndicator()!.y + ')'">
                   <circle r="12" fill="rgba(34, 197, 94, 0.2)" class="animate-ping" />
                   <circle r="5" fill="#22c55e" />
                 </g>
@@ -976,6 +953,7 @@ export class IconComponent implements OnInit {
               <!-- Marquee -->
               @if (marqueeBox()) {
                 <rect
+                  data-export-exclude="true"
                   [attr.x]="min(marqueeBox()!.x1, marqueeBox()!.x2)"
                   [attr.y]="min(marqueeBox()!.y1, marqueeBox()!.y2)"
                   [attr.width]="abs(marqueeBox()!.x1 - marqueeBox()!.x2)"
@@ -1306,6 +1284,23 @@ export class IconComponent implements OnInit {
         }
       }
     </ng-template>
+
+    @if (tooltip().visible) {
+      <div
+        class="fixed z-[9999] pointer-events-none rounded-xl border border-[var(--tooltip-border)] bg-[var(--tooltip-bg)] px-3 py-2 text-[10px] font-semibold text-[var(--tooltip-text)] shadow-2xl"
+        [style.left.px]="tooltip().x"
+        [style.top.px]="tooltip().y"
+        role="tooltip"
+        aria-live="polite"
+      >
+        <div class="text-[11px] font-black tracking-wide text-[var(--text-primary)]">
+          {{ tooltip().name }}
+        </div>
+        <div class="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">
+          {{ tooltip().description }}
+        </div>
+      </div>
+    }
   `,
   styles: [
     `
@@ -1384,6 +1379,14 @@ export class App {
   collapsedGroups = signal<Record<string, boolean>>({});
   theme = signal<'light' | 'dark'>('dark');
   isExportMenuOpen = signal(false);
+  tooltip = signal<{ x: number; y: number; name: string; description: string; visible: boolean }>({
+    x: 0,
+    y: 0,
+    name: '',
+    description: '',
+    visible: false
+  });
+  tooltipTimer: ReturnType<typeof setTimeout> | null = null;
 
   history = signal<DiagramComponent[][]>([]);
   future = signal<DiagramComponent[][]>([]);
@@ -1663,25 +1666,9 @@ export class App {
     this.isExportMenuOpen.set(false);
   }
 
-  exportAs(format: string) {
+  exportAs(format: 'png' | 'jpeg' | 'pdf') {
     this.closeExportMenu();
-    switch (format) {
-      case 'jpg':
-        this.saveImage('jpeg');
-        break;
-      case 'json':
-        this.saveJson();
-        break;
-      case 'excel':
-        this.saveCsv();
-        break;
-      case 'dxf':
-        this.saveDxf();
-        break;
-      case 'pdf':
-        window.print();
-        break;
-    }
+    this.exportCanvas(format);
   }
 
   downloadFile(content: string, fileName: string, contentType: string) {
@@ -1694,66 +1681,71 @@ export class App {
     URL.revokeObjectURL(url);
   }
 
-  saveJson() {
-    const data = JSON.stringify(this.components(), null, 2);
-    this.downloadFile(data, 'substation-design.json', 'application/json');
-  }
+  async exportCanvas(format: 'png' | 'jpeg' | 'pdf') {
+    const svg = this.buildExportSvg();
+    const width = svg.clientWidth || this.svgRef.nativeElement.clientWidth;
+    const height = svg.clientHeight || this.svgRef.nativeElement.clientHeight;
+    const scale = 2;
 
-  saveCsv() {
-    let csv = 'ID,Type,Label,State,X,Y,Rotation\n';
-    this.components().forEach((c) => {
-      csv += `${c.id},${c.type},${c.label || ''},${c.state},${c.x},${c.y},${c.rotation}\n`;
-    });
-    this.downloadFile(csv, 'substation-bom.csv', 'text/csv');
-  }
-
-  saveDxf() {
-    let dxf = '0\nSECTION\n2\nENTITIES\n';
-    this.components().forEach((c) => {
-      // Basic POINT export for now
-      dxf += '0\nPOINT\n8\n0\n10\n' + c.x + '\n20\n' + -c.y + '\n30\n0.0\n';
-      // Add TEXT for Label
-      if (c.label) {
-        dxf +=
-          '0\nTEXT\n8\n0\n10\n' +
-          (c.x + c.labelOffset.x) +
-          '\n20\n' +
-          -(c.y + c.labelOffset.y) +
-          '\n30\n0.0\n40\n10\n1\n' +
-          c.label +
-          '\n';
-      }
-    });
-    dxf += '0\nENDSEC\n0\nEOF';
-    this.downloadFile(dxf, 'substation.dxf', 'application/dxf');
-  }
-
-  saveImage(type: 'png' | 'jpeg') {
-    const svg = this.svgRef.nativeElement;
     const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
     const img = new Image();
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    // Set dimensions based on current view or fixed size
-    canvas.width = svg.clientWidth;
-    canvas.height = svg.clientHeight;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      img.onload = () => {
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL(`image/${format === 'jpeg' ? 'jpeg' : 'png'}`));
+      };
+      img.onerror = () => reject(new Error('Failed to render SVG'));
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    });
 
-    img.onload = () => {
-      if (ctx) {
-        if (type === 'jpeg') {
-          ctx.fillStyle = this.theme() === 'dark' ? '#000000' : '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(img, 0, 0);
-        const url = canvas.toDataURL(`image/${type}`);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `substation-view.${type}`;
-        a.click();
-      }
-    };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    if (format === 'pdf') {
+      const pdf = new jsPDF({
+        orientation: width >= height ? 'l' : 'p',
+        unit: 'px',
+        format: [width, height]
+      });
+      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
+      pdf.save('substation-canvas.pdf');
+      return;
+    }
+
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `substation-canvas.${format === 'jpeg' ? 'jpg' : 'png'}`;
+    a.click();
+  }
+
+  buildExportSvg() {
+    const svg = this.svgRef.nativeElement;
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    clone.querySelectorAll('[data-export-exclude=\"true\"]').forEach((node) => node.remove());
+    clone.querySelectorAll('.opacity-80').forEach((node) => node.classList.remove('opacity-80'));
+
+    const width = svg.clientWidth;
+    const height = svg.clientHeight;
+    clone.setAttribute('width', String(width));
+    clone.setAttribute('height', String(height));
+    if (!clone.getAttribute('viewBox')) {
+      clone.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    }
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', '0');
+    bg.setAttribute('y', '0');
+    bg.setAttribute('width', String(width));
+    bg.setAttribute('height', String(height));
+    bg.setAttribute('fill', this.theme() === 'dark' ? '#000000' : '#ffffff');
+    clone.insertBefore(bg, clone.firstChild);
+
+    return clone;
   }
 
   // --- Handlers ---
@@ -2140,7 +2132,34 @@ export class App {
   }
 
   onDragStart(e: DragEvent, type: string) {
+    this.hideTooltip();
     e.dataTransfer?.setData('type', type);
+  }
+
+  showTooltip(type: ComponentType, e: MouseEvent) {
+    if (this.tooltipTimer) clearTimeout(this.tooltipTimer);
+    const info = this.getComponentInfo(type);
+    const x = e.clientX + 14;
+    const y = e.clientY + 16;
+    this.tooltipTimer = setTimeout(() => {
+      this.tooltip.set({ x, y, name: info.name, description: info.description, visible: true });
+      this.tooltipTimer = null;
+    }, 180);
+  }
+
+  moveTooltip(e: MouseEvent) {
+    if (!this.tooltip().visible) return;
+    this.tooltip.update((t) => ({ ...t, x: e.clientX + 14, y: e.clientY + 16 }));
+  }
+
+  hideTooltip() {
+    if (this.tooltipTimer) {
+      clearTimeout(this.tooltipTimer);
+      this.tooltipTimer = null;
+    }
+    if (this.tooltip().visible) {
+      this.tooltip.update((t) => ({ ...t, visible: false }));
+    }
   }
 
   // --- UI Helpers ---
