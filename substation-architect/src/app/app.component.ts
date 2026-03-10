@@ -629,7 +629,7 @@ export class IconComponent implements OnInit {
                             y1="0"
                             [attr.x2]="comp.length"
                             y2="0"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -1033,7 +1033,7 @@ export class IconComponent implements OnInit {
           </svg>
         }
         @case ('busbar') {
-          <div class="w-8 h-0.5 bg-white rounded-full"></div>
+          <div class="w-8 h-0.5 rounded-full" [ngClass]="theme() === 'dark' ? 'bg-white' : 'bg-slate-900'"></div>
         }
         @case ('line') {
           <div class="w-0.5 h-6 bg-neutral-500 rounded-full"></div>
@@ -1866,6 +1866,13 @@ export class App {
 
   getComponentLabel(type: string) {
     return COMPONENT_METADATA[type as ComponentType].defaultLabel || type;
+  }
+
+  getStrokeColor(comp: DiagramComponent) {
+    if (comp.type !== 'busbar') return comp.color;
+    const isDefault = comp.color === '#ffffff' || comp.color === '#171717';
+    if (!isDefault) return comp.color;
+    return this.theme() === 'dark' ? '#ffffff' : '#111827';
   }
 
   isSelected(id: string) {
