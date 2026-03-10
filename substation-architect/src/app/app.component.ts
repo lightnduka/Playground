@@ -19,11 +19,20 @@ type ComponentType =
   | 'isolator'
   | 'earth_switch'
   | 'transformer'
+  | 'power_transformer'
+  | 'distribution_transformer'
   | 'ct'
   | 'vt'
   | 'la'
   | 'busbar'
-  | 'line';
+  | 'line'
+  | 'capacitor_bank'
+  | 'shunt_reactor'
+  | 'protection_relay'
+  | 'control_panel'
+  | 'wave_trap'
+  | 'insulator'
+  | 'scada_rtu';
 
 interface Port {
   id: string;
@@ -62,7 +71,7 @@ const SNAP_DIST = 20;
 
 const COMPONENT_METADATA: Record<
   ComponentType,
-  { ports: Port[]; category: string; defaultLabel?: string; defaultOffset: { x: number; y: number } }
+  { ports: Port[]; category: string; defaultLabel?: string; defaultOffset: { x: number; y: number }; name: string; description: string }
 > = {
   breaker: {
     category: 'Primary',
@@ -73,7 +82,9 @@ const COMPONENT_METADATA: Record<
       { id: 'r', x: 15, y: 0 }
     ],
     defaultLabel: 'CB',
-    defaultOffset: { x: 0, y: 35 }
+    defaultOffset: { x: 0, y: 35 },
+    name: 'Circuit Breaker',
+    description: 'Interrupts fault current to protect equipment'
   },
   isolator: {
     category: 'Primary',
@@ -84,7 +95,9 @@ const COMPONENT_METADATA: Record<
       { id: 'r', x: 10, y: 0 }
     ],
     defaultLabel: 'DS',
-    defaultOffset: { x: 30, y: 0 }
+    defaultOffset: { x: 30, y: 0 },
+    name: 'Isolator / Disconnect Switch',
+    description: 'Provides visible isolation for maintenance'
   },
   earth_switch: {
     category: 'Primary',
@@ -95,7 +108,9 @@ const COMPONENT_METADATA: Record<
       { id: 'r', x: 10, y: 0 }
     ],
     defaultLabel: 'ES',
-    defaultOffset: { x: 0, y: 25 }
+    defaultOffset: { x: 0, y: 25 },
+    name: 'Earthing Switch',
+    description: 'Safely grounds isolated equipment'
   },
   transformer: {
     category: 'Primary',
@@ -106,7 +121,35 @@ const COMPONENT_METADATA: Record<
       { id: 'r', x: 14, y: 0 }
     ],
     defaultLabel: 'TR',
-    defaultOffset: { x: 40, y: 0 }
+    defaultOffset: { x: 40, y: 0 },
+    name: 'Transformer',
+    description: 'Transfers energy between voltage levels'
+  },
+  power_transformer: {
+    category: 'Primary',
+    ports: [
+      { id: 't', x: 0, y: -26 },
+      { id: 'b', x: 0, y: 26 },
+      { id: 'l', x: -14, y: 0 },
+      { id: 'r', x: 14, y: 0 }
+    ],
+    defaultLabel: 'PTR',
+    defaultOffset: { x: 50, y: 0 },
+    name: 'Power Transformer',
+    description: 'High-voltage transformer for bulk power transfer'
+  },
+  distribution_transformer: {
+    category: 'Primary',
+    ports: [
+      { id: 't', x: 0, y: -24 },
+      { id: 'b', x: 0, y: 24 },
+      { id: 'l', x: -12, y: 0 },
+      { id: 'r', x: 12, y: 0 }
+    ],
+    defaultLabel: 'DTR',
+    defaultOffset: { x: 50, y: 0 },
+    name: 'Distribution Transformer',
+    description: 'Steps down voltage for local distribution'
   },
   ct: {
     category: 'Protection',
@@ -117,7 +160,9 @@ const COMPONENT_METADATA: Record<
       { id: 'r', x: 12, y: 0 }
     ],
     defaultLabel: 'CT',
-    defaultOffset: { x: 0, y: 20 }
+    defaultOffset: { x: 0, y: 20 },
+    name: 'Current Transformer',
+    description: 'Used for current measurement and protection'
   },
   vt: {
     category: 'Protection',
@@ -127,8 +172,10 @@ const COMPONENT_METADATA: Record<
       { id: 'l', x: -6, y: 0 },
       { id: 'r', x: 6, y: 0 }
     ],
-    defaultLabel: 'VT',
-    defaultOffset: { x: 20, y: 0 }
+    defaultLabel: 'PT/VT',
+    defaultOffset: { x: 20, y: 0 },
+    name: 'Potential / Voltage Transformer',
+    description: 'Measures system voltage for metering and protection'
   },
   la: {
     category: 'Protection',
@@ -139,9 +186,18 @@ const COMPONENT_METADATA: Record<
       { id: 'r', x: 6, y: 0 }
     ],
     defaultLabel: 'LA',
-    defaultOffset: { x: 20, y: 0 }
+    defaultOffset: { x: 20, y: 0 },
+    name: 'Lightning / Surge Arrester',
+    description: 'Diverts surge energy to protect insulation'
   },
-  busbar: { category: 'Connections', ports: [], defaultLabel: 'BUSBAR', defaultOffset: { x: 0, y: -20 } },
+  busbar: {
+    category: 'Connections',
+    ports: [],
+    defaultLabel: 'BUSBAR',
+    defaultOffset: { x: 0, y: -20 },
+    name: 'Busbar',
+    description: 'Common node distributing power to feeders'
+  },
   line: {
     category: 'Connections',
     ports: [
@@ -149,7 +205,77 @@ const COMPONENT_METADATA: Record<
       { id: 'b', x: 0, y: 50 }
     ],
     defaultLabel: 'LINE',
-    defaultOffset: { x: 15, y: 0 }
+    defaultOffset: { x: 15, y: 0 },
+    name: 'Line',
+    description: 'Transmission or feeder connection'
+  },
+  capacitor_bank: {
+    category: 'Primary',
+    ports: [
+      { id: 't', x: 0, y: -18 },
+      { id: 'b', x: 0, y: 18 }
+    ],
+    defaultLabel: 'CAP',
+    defaultOffset: { x: 24, y: 0 },
+    name: 'Capacitor Bank',
+    description: 'Provides reactive power support and voltage control'
+  },
+  shunt_reactor: {
+    category: 'Primary',
+    ports: [
+      { id: 't', x: 0, y: -18 },
+      { id: 'b', x: 0, y: 18 }
+    ],
+    defaultLabel: 'SR',
+    defaultOffset: { x: 24, y: 0 },
+    name: 'Shunt Reactor',
+    description: 'Absorbs reactive power to control overvoltage'
+  },
+  protection_relay: {
+    category: 'Secondary & Control',
+    ports: [{ id: 'l', x: -18, y: 0 }, { id: 'r', x: 18, y: 0 }],
+    defaultLabel: 'REL',
+    defaultOffset: { x: 0, y: 28 },
+    name: 'Protection Relay',
+    description: 'Detects faults and issues trip commands'
+  },
+  control_panel: {
+    category: 'Secondary & Control',
+    ports: [{ id: 'l', x: -18, y: 0 }, { id: 'r', x: 18, y: 0 }],
+    defaultLabel: 'CTRL',
+    defaultOffset: { x: 0, y: 28 },
+    name: 'Control / Relay Panel',
+    description: 'Houses control and protection equipment'
+  },
+  wave_trap: {
+    category: 'Secondary & Control',
+    ports: [
+      { id: 't', x: 0, y: -16 },
+      { id: 'b', x: 0, y: 16 }
+    ],
+    defaultLabel: 'WT',
+    defaultOffset: { x: 20, y: 0 },
+    name: 'Wave Trap',
+    description: 'Blocks carrier signals for PLCC systems'
+  },
+  insulator: {
+    category: 'Primary',
+    ports: [
+      { id: 't', x: 0, y: -12 },
+      { id: 'b', x: 0, y: 12 }
+    ],
+    defaultLabel: 'INS',
+    defaultOffset: { x: 20, y: 0 },
+    name: 'Insulator',
+    description: 'Provides electrical insulation and mechanical support'
+  },
+  scada_rtu: {
+    category: 'Secondary & Control',
+    ports: [{ id: 'l', x: -18, y: 0 }, { id: 'r', x: 18, y: 0 }],
+    defaultLabel: 'RTU',
+    defaultOffset: { x: 0, y: 28 },
+    name: 'SCADA / RTU',
+    description: 'Remote monitoring and control interface'
   }
 };
 
@@ -442,7 +568,7 @@ export class IconComponent implements OnInit {
                       <div
                         draggable="true"
                         (dragstart)="onDragStart($event, type)"
-                        class="flex flex-col items-center justify-center p-4 border rounded-2xl cursor-grab active:cursor-grabbing transition-all hover:scale-105 group bg-[var(--panel-bg)] border-[var(--panel-border)] hover:border-[var(--accent)] active:border-[var(--accent)] active:bg-[var(--hover-bg)]"
+                        class="relative flex flex-col items-center justify-center p-4 border rounded-2xl cursor-grab active:cursor-grabbing transition-all hover:scale-105 group bg-[var(--panel-bg)] border-[var(--panel-border)] hover:border-[var(--accent)] active:border-[var(--accent)] active:bg-[var(--hover-bg)]"
                       >
                         <div class="mb-3 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
                           <ng-container *ngTemplateOutlet="sidebarIcon; context: { $implicit: type }"></ng-container>
@@ -452,6 +578,17 @@ export class IconComponent implements OnInit {
                         >
                           {{ getComponentLabel(type) }}
                         </span>
+                        <div
+                          class="pointer-events-none absolute left-1/2 top-full z-50 mt-3 w-56 -translate-x-1/2 rounded-xl border border-[var(--tooltip-border)] bg-[var(--tooltip-bg)] px-3 py-2 text-[10px] font-semibold text-[var(--tooltip-text)] opacity-0 transition-opacity duration-150 delay-0 group-hover:opacity-100 group-hover:delay-150 shadow-xl"
+                          role="tooltip"
+                        >
+                          <div class="text-[11px] font-black tracking-wide text-[var(--text-primary)]">
+                            {{ getComponentInfo(type).name }}
+                          </div>
+                          <div class="mt-1 text-[10px] font-semibold text-[var(--text-secondary)]">
+                            {{ getComponentInfo(type).description }}
+                          </div>
+                        </div>
                       </div>
                     }
                   </div>
@@ -537,7 +674,7 @@ export class IconComponent implements OnInit {
                             width="30"
                             height="30"
                             [attr.fill]="comp.state === 'closed' ? '#dc2626' : 'transparent'"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             rx="2"
                             vector-effect="non-scaling-stroke"
@@ -548,7 +685,7 @@ export class IconComponent implements OnInit {
                               y1="-15"
                               x2="15"
                               y2="15"
-                              [attr.stroke]="comp.color"
+                              [attr.stroke]="getStrokeColor(comp)"
                               stroke-width="2"
                               vector-effect="non-scaling-stroke"
                             />
@@ -560,7 +697,7 @@ export class IconComponent implements OnInit {
                             y1="-20"
                             x2="0"
                             y2="-8"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -569,7 +706,7 @@ export class IconComponent implements OnInit {
                             y1="20"
                             x2="0"
                             y2="8"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -578,7 +715,7 @@ export class IconComponent implements OnInit {
                             y1="-8"
                             [attr.x2]="comp.state === 'closed' ? 0 : 10"
                             [attr.y2]="comp.state === 'closed' ? 8 : 5"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -587,7 +724,7 @@ export class IconComponent implements OnInit {
                             y1="-8"
                             x2="5"
                             y2="-8"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -598,7 +735,7 @@ export class IconComponent implements OnInit {
                             cy="-12"
                             r="14"
                             fill="transparent"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -607,10 +744,19 @@ export class IconComponent implements OnInit {
                             cy="12"
                             r="14"
                             fill="transparent"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
+                        </g>
+                        <g *ngSwitchCase="'power_transformer'">
+                          <circle cx="0" cy="-12" r="14" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" cy="12" r="14" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="-18" y1="-20" x2="18" y2="-20" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </g>
+                        <g *ngSwitchCase="'distribution_transformer'">
+                          <circle cx="0" cy="-10" r="12" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" cy="10" r="12" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
                         </g>
                         <g *ngSwitchCase="'busbar'">
                           <line
@@ -629,12 +775,12 @@ export class IconComponent implements OnInit {
                             [attr.y1]="-(comp.length || 100) / 2"
                             x2="0"
                             [attr.y2]="(comp.length || 100) / 2"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
-                          <circle cx="0" [attr.cy]="-(comp.length || 100) / 2" r="3" [attr.fill]="comp.color" vector-effect="non-scaling-stroke" />
-                          <circle cx="0" [attr.cy]="(comp.length || 100) / 2" r="3" [attr.fill]="comp.color" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" [attr.cy]="-(comp.length || 100) / 2" r="3" [attr.fill]="getStrokeColor(comp)" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" [attr.cy]="(comp.length || 100) / 2" r="3" [attr.fill]="getStrokeColor(comp)" vector-effect="non-scaling-stroke" />
                         </g>
                         <g *ngSwitchCase="'ct'">
                           <circle
@@ -642,7 +788,7 @@ export class IconComponent implements OnInit {
                             cy="0"
                             r="7"
                             fill="transparent"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -651,7 +797,7 @@ export class IconComponent implements OnInit {
                             y1="0"
                             x2="12"
                             y2="0"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -662,7 +808,7 @@ export class IconComponent implements OnInit {
                             cy="-6"
                             r="6"
                             fill="transparent"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -671,7 +817,7 @@ export class IconComponent implements OnInit {
                             cy="6"
                             r="6"
                             fill="transparent"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -680,7 +826,7 @@ export class IconComponent implements OnInit {
                             y1="-25"
                             x2="0"
                             y2="-12"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -692,7 +838,7 @@ export class IconComponent implements OnInit {
                             width="12"
                             height="30"
                             fill="transparent"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
@@ -701,7 +847,7 @@ export class IconComponent implements OnInit {
                             y1="-5"
                             x2="6"
                             y2="5"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
                           />
@@ -710,7 +856,7 @@ export class IconComponent implements OnInit {
                             y1="-5"
                             x2="-6"
                             y2="5"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="1"
                             vector-effect="non-scaling-stroke"
                           />
@@ -719,10 +865,46 @@ export class IconComponent implements OnInit {
                             y1="15"
                             x2="0"
                             y2="25"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
+                        </g>
+                        <g *ngSwitchCase="'capacitor_bank'">
+                          <line x1="0" y1="-18" x2="0" y2="-6" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="-10" y1="-6" x2="10" y2="-6" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="-10" y1="6" x2="10" y2="6" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="0" y1="6" x2="0" y2="18" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </g>
+                        <g *ngSwitchCase="'shunt_reactor'">
+                          <line x1="0" y1="-18" x2="0" y2="-10" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <path d="M -8 -10 Q -4 -2 0 -10 Q 4 -18 8 -10 Q 4 -2 0 -10 Q -4 -18 -8 -10 Z" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="0" y1="10" x2="0" y2="18" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </g>
+                        <g *ngSwitchCase="'protection_relay'">
+                          <rect x="-14" y="-10" width="28" height="20" rx="2" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="-10" y1="0" x2="10" y2="0" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </g>
+                        <g *ngSwitchCase="'control_panel'">
+                          <rect x="-16" y="-12" width="32" height="24" rx="2" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <circle cx="-6" cy="-2" r="2" [attr.fill]="getStrokeColor(comp)" />
+                          <circle cx="0" cy="-2" r="2" [attr.fill]="getStrokeColor(comp)" />
+                          <circle cx="6" cy="-2" r="2" [attr.fill]="getStrokeColor(comp)" />
+                        </g>
+                        <g *ngSwitchCase="'wave_trap'">
+                          <line x1="0" y1="-16" x2="0" y2="-8" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" cy="0" r="8" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="0" y1="8" x2="0" y2="16" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </g>
+                        <g *ngSwitchCase="'insulator'">
+                          <circle cx="0" cy="-10" r="4" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" cy="0" r="4" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <circle cx="0" cy="10" r="4" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        </g>
+                        <g *ngSwitchCase="'scada_rtu'">
+                          <rect x="-16" y="-12" width="32" height="24" rx="2" fill="transparent" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="-6" y1="4" x2="6" y2="4" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="0" y1="-12" x2="0" y2="-18" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
                         </g>
                         <g *ngSwitchCase="'earth_switch'">
                           <line
@@ -730,13 +912,13 @@ export class IconComponent implements OnInit {
                             y1="0"
                             [attr.x2]="comp.state === 'closed' ? 15 : 10"
                             [attr.y2]="comp.state === 'closed' ? 0 : -5"
-                            [attr.stroke]="comp.color"
+                            [attr.stroke]="getStrokeColor(comp)"
                             stroke-width="2"
                             vector-effect="non-scaling-stroke"
                           />
-                          <line x1="15" y1="-8" x2="15" y2="8" [attr.stroke]="comp.color" stroke-width="2" vector-effect="non-scaling-stroke" />
-                          <line x1="18" y1="-5" x2="18" y2="5" [attr.stroke]="comp.color" stroke-width="2" vector-effect="non-scaling-stroke" />
-                          <line x1="21" y1="-2" x2="21" y2="2" [attr.stroke]="comp.color" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="15" y1="-8" x2="15" y2="8" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="18" y1="-5" x2="18" y2="5" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                          <line x1="21" y1="-2" x2="21" y2="2" [attr.stroke]="getStrokeColor(comp)" stroke-width="2" vector-effect="non-scaling-stroke" />
                         </g>
                       </ng-container>
 
@@ -1027,11 +1209,24 @@ export class IconComponent implements OnInit {
             <circle cx="0" cy="7" r="8" fill="none" stroke="currentColor" stroke-width="2" />
           </svg>
         }
+        @case ('power_transformer') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <circle cx="0" cy="-7" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="0" cy="7" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="-12" y1="-14" x2="12" y2="-14" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
+        @case ('distribution_transformer') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <circle cx="0" cy="-6" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="0" cy="6" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
         @case ('busbar') {
           <div class="w-8 h-0.5 rounded-full" [ngClass]="theme() === 'dark' ? 'bg-white' : 'bg-slate-900'"></div>
         }
         @case ('line') {
-          <div class="w-0.5 h-6 bg-neutral-500 rounded-full"></div>
+          <div class="w-0.5 h-6 bg-[var(--text-muted)] rounded-full"></div>
         }
         @case ('ct') {
           <svg width="18" height="18" viewBox="-20 -20 40 40">
@@ -1051,6 +1246,52 @@ export class IconComponent implements OnInit {
             <rect x="-5" y="-10" width="10" height="20" fill="none" stroke="currentColor" stroke-width="2" />
             <line x1="-5" y1="-4" x2="5" y2="4" stroke="currentColor" />
             <line x1="5" y1="-4" x2="-5" y2="4" stroke="currentColor" />
+          </svg>
+        }
+        @case ('capacitor_bank') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <line x1="-10" y1="-4" x2="10" y2="-4" stroke="currentColor" stroke-width="2" />
+            <line x1="-10" y1="4" x2="10" y2="4" stroke="currentColor" stroke-width="2" />
+            <line x1="0" y1="-12" x2="0" y2="-4" stroke="currentColor" stroke-width="2" />
+            <line x1="0" y1="4" x2="0" y2="12" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
+        @case ('shunt_reactor') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <path d="M -8 -6 Q -4 2 0 -6 Q 4 -14 8 -6 Q 4 2 0 -6 Q -4 -14 -8 -6 Z" fill="none" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
+        @case ('protection_relay') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <rect x="-12" y="-8" width="24" height="16" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="-8" y1="0" x2="8" y2="0" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
+        @case ('control_panel') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <rect x="-12" y="-10" width="24" height="20" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="-4" cy="0" r="2" fill="currentColor" />
+            <circle cx="4" cy="0" r="2" fill="currentColor" />
+          </svg>
+        }
+        @case ('wave_trap') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <circle cx="0" cy="0" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="0" y1="-12" x2="0" y2="-8" stroke="currentColor" stroke-width="2" />
+            <line x1="0" y1="8" x2="0" y2="12" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
+        @case ('insulator') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <circle cx="0" cy="-6" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="0" cy="0" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="0" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+          </svg>
+        }
+        @case ('scada_rtu') {
+          <svg width="18" height="18" viewBox="-20 -20 40 40">
+            <rect x="-12" y="-10" width="24" height="20" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="-6" y1="6" x2="6" y2="6" stroke="currentColor" stroke-width="2" />
           </svg>
         }
         @case ('earth_switch') {
@@ -1088,10 +1329,14 @@ export class IconComponent implements OnInit {
         --hover-border: #525252;
         --accent: #3b82f6;
         --accent-soft: rgba(59, 130, 246, 0.12);
+        --equip-stroke: #f5f5f5;
         --danger-bg: #260000;
         --danger-text: #ef4444;
         --danger-border: #7f1d1d;
         --ring: #525252;
+        --tooltip-bg: #0a0a0a;
+        --tooltip-border: #262626;
+        --tooltip-text: #e5e7eb;
       }
       :host .theme-light {
         --app-bg: #f8fafc;
@@ -1110,10 +1355,14 @@ export class IconComponent implements OnInit {
         --hover-border: #94a3b8;
         --accent: #2563eb;
         --accent-soft: rgba(37, 99, 235, 0.12);
+        --equip-stroke: #0f172a;
         --danger-bg: #fee2e2;
         --danger-text: #b91c1c;
         --danger-border: #fca5a5;
         --ring: #94a3b8;
+        --tooltip-bg: #ffffff;
+        --tooltip-border: #e2e8f0;
+        --tooltip-text: #0f172a;
       }
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
@@ -1164,15 +1413,29 @@ export class App {
   filteredGroups = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const groupsList: Record<string, ComponentType[]> = {
-      'Primary Equipment': ['breaker', 'isolator', 'earth_switch', 'transformer'],
-      'Protection & Metering': ['ct', 'vt', 'la'],
+      'Primary Equipment': [
+        'breaker',
+        'isolator',
+        'earth_switch',
+        'transformer',
+        'power_transformer',
+        'distribution_transformer',
+        'capacitor_bank',
+        'shunt_reactor',
+        'insulator'
+      ],
+      'Protection & Metering': ['ct', 'vt', 'la', 'protection_relay'],
+      'Secondary & Control': ['control_panel', 'scada_rtu', 'wave_trap'],
       Connections: ['busbar', 'line']
     };
 
     return Object.entries(groupsList)
       .map(([name, types]) => {
         const filtered = types.filter(
-          (type) => type.toLowerCase().includes(term) || COMPONENT_METADATA[type].defaultLabel?.toLowerCase().includes(term)
+          (type) =>
+            type.toLowerCase().includes(term) ||
+            COMPONENT_METADATA[type].defaultLabel?.toLowerCase().includes(term) ||
+            COMPONENT_METADATA[type].name.toLowerCase().includes(term)
         );
         return { name, types: filtered };
       })
@@ -1868,10 +2131,9 @@ export class App {
       label: meta.defaultLabel,
       labelOffset: { ...meta.defaultOffset },
       scale: 1,
-      color: this.theme() === 'dark' ? '#f5f5f5' : '#171717',
+      color: 'theme',
       length: type === 'busbar' ? 400 : type === 'line' ? 100 : undefined
     };
-    if (type === 'busbar') newComp.color = '#ffffff';
 
     this.commitToHistory([...this.components(), newComp]);
     this.selectedIds.set([newComp.id]);
@@ -1907,11 +2169,15 @@ export class App {
     return COMPONENT_METADATA[type as ComponentType].defaultLabel || type;
   }
 
+  getComponentInfo(type: ComponentType) {
+    return COMPONENT_METADATA[type];
+  }
+
   getStrokeColor(comp: DiagramComponent) {
-    if (comp.type !== 'busbar') return comp.color;
+    if (!comp.color || comp.color === 'theme') return 'var(--equip-stroke)';
     const isDefault = comp.color === '#ffffff' || comp.color === '#171717';
-    if (!isDefault) return comp.color;
-    return this.theme() === 'dark' ? '#ffffff' : '#111827';
+    if (isDefault) return 'var(--equip-stroke)';
+    return comp.color;
   }
 
   isSelected(id: string) {
