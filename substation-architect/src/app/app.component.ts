@@ -271,7 +271,7 @@ const ICONS: Record<string, string> = {
     </svg>
   `
 })
-class IconComponent implements OnInit {
+export class IconComponent implements OnInit {
   @Input() name: string = '';
   @Input() size: string | number = 24;
   path: string = '';
