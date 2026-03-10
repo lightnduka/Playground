@@ -289,8 +289,8 @@ export class IconComponent implements OnInit {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
-      class="flex flex-col h-screen font-sans overflow-hidden transition-colors duration-500"
-      [ngClass]="{ 'bg-[#000000] text-[#f5f5f5]': theme() === 'dark', 'bg-slate-50 text-slate-900': theme() === 'light' }"
+      class="flex flex-col h-screen font-sans overflow-hidden transition-colors duration-500 bg-[var(--app-bg)] text-[var(--app-text)]"
+      [ngClass]="{ 'theme-dark': theme() === 'dark', 'theme-light': theme() === 'light' }"
     >
       <!-- Header -->
       <header
@@ -405,13 +405,12 @@ export class IconComponent implements OnInit {
       <div class="flex flex-1 overflow-hidden relative" (click)="closeExportMenu()">
         <!-- Sidebar -->
         <aside
-          class="w-72 border-r flex flex-col z-20 shadow-2xl"
+          class="w-72 border-r flex flex-col z-20 shadow-2xl bg-[var(--panel-bg)] border-[var(--panel-border)]"
           (click)="$event.stopPropagation()"
-          [ngClass]="{ 'bg-[#0a0a0a] border-[#1a1a1a]': theme() === 'dark', 'bg-white border-slate-200': theme() === 'light' }"
         >
           <div class="p-5">
             <div class="relative group">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-600">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-dim)]">
                 <app-icon name="search" size="16"></app-icon>
               </span>
               <input
@@ -419,21 +418,17 @@ export class IconComponent implements OnInit {
                 placeholder="QUERY EQUIPMENT..."
                 [ngModel]="searchTerm()"
                 (ngModelChange)="searchTerm.set($event)"
-                class="w-full pl-11 pr-4 py-3 rounded-2xl text-[11px] font-black outline-none transition-all focus:ring-1 focus:ring-neutral-700"
-                [ngClass]="{ 'bg-[#000000] border-[#1a1a1a] text-neutral-200': theme() === 'dark', 'bg-slate-50 border-slate-200': theme() === 'light' }"
+                class="w-full pl-11 pr-4 py-3 rounded-2xl text-[11px] font-black outline-none transition-all focus:ring-1 focus:ring-[var(--ring)] bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)]"
               />
             </div>
           </div>
 
           <div class="flex-1 overflow-y-auto p-4 pt-0 space-y-4 scrollbar-hide">
             @for (group of filteredGroups(); track group.name) {
-              <div
-                class="rounded-2xl overflow-hidden border"
-                [ngClass]="{ 'bg-[#0a0a0a] border-[#1a1a1a]': theme() === 'dark', 'bg-slate-50': theme() === 'light' }"
-              >
+              <div class="rounded-2xl overflow-hidden border bg-[var(--panel-bg)] border-[var(--panel-border)]">
                 <button
                   (click)="toggleGroup(group.name)"
-                  class="w-full flex items-center justify-between p-4 text-[9px] font-black uppercase tracking-[0.2em] text-neutral-500 hover:text-white transition-colors"
+                  class="w-full flex items-center justify-between p-4 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   {{ group.name }}
                   <app-icon [name]="isGroupCollapsed(group.name) ? 'chevronRight' : 'chevronDown'" size="14"></app-icon>
@@ -441,25 +436,19 @@ export class IconComponent implements OnInit {
 
                 @if (!isGroupCollapsed(group.name)) {
                   <div
-                    class="p-3 grid grid-cols-2 gap-3 border-t border-[#1a1a1a]"
-                    [ngClass]="theme() === 'dark' ? 'bg-[#050505]' : 'bg-white'"
+                    class="p-3 grid grid-cols-2 gap-3 border-t border-[var(--panel-border)] bg-[var(--panel-muted)]"
                   >
                     @for (type of group.types; track type) {
                       <div
                         draggable="true"
                         (dragstart)="onDragStart($event, type)"
-                        class="flex flex-col items-center justify-center p-4 border rounded-2xl cursor-grab active:cursor-grabbing transition-all hover:scale-105 group"
-                        [ngClass]="
-                          theme() === 'dark'
-                            ? 'bg-[#0a0a0a] border-[#1a1a1a] hover:border-neutral-500'
-                            : 'bg-white border-slate-100 hover:border-blue-500'
-                        "
+                        class="flex flex-col items-center justify-center p-4 border rounded-2xl cursor-grab active:cursor-grabbing transition-all hover:scale-105 group bg-[var(--panel-bg)] border-[var(--panel-border)] hover:border-[var(--accent)] active:border-[var(--accent)] active:bg-[var(--hover-bg)]"
                       >
-                        <div class="mb-3 text-neutral-500 group-hover:text-white">
+                        <div class="mb-3 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
                           <ng-container *ngTemplateOutlet="sidebarIcon; context: { $implicit: type }"></ng-container>
                         </div>
                         <span
-                          class="text-[9px] font-black text-neutral-500 text-center uppercase tracking-tight group-hover:text-white"
+                          class="text-[9px] font-black text-[var(--text-muted)] text-center uppercase tracking-tight group-hover:text-[var(--text-primary)]"
                         >
                           {{ getComponentLabel(type) }}
                         </span>
@@ -839,21 +828,23 @@ export class IconComponent implements OnInit {
 
         <!-- Properties Panel -->
         <aside
-          class="transition-all duration-300 border-l flex flex-col h-full"
+          class="transition-all duration-300 border-l flex flex-col h-full bg-[var(--panel-bg)] border-[var(--panel-border)]"
           (click)="$event.stopPropagation()"
-          [ngClass]="[
-            theme() === 'dark' ? 'bg-[#0a0a0a] border-[#1a1a1a]' : 'bg-white border-slate-200',
-            selectedIds().length > 0 ? 'w-80' : 'w-0 overflow-hidden'
-          ]"
+          [ngClass]="selectedIds().length > 0 ? 'w-80' : 'w-0 overflow-hidden'"
         >
-          <div class="p-6 border-b flex items-center justify-between bg-[#050505]/50 border-[#1a1a1a]">
+          <div class="p-6 border-b flex items-center justify-between bg-[var(--panel-muted)] border-[var(--panel-border)]">
             <div class="flex items-center gap-2">
-              <div class="p-2 bg-blue-500/10 rounded-lg text-blue-500"><app-icon name="layers" size="16"></app-icon></div>
-              <h3 class="font-black text-[10px] uppercase tracking-[0.3em]">
+              <div class="p-2 rounded-lg text-[var(--accent)] bg-[var(--accent-soft)]">
+                <app-icon name="layers" size="16"></app-icon>
+              </div>
+              <h3 class="font-black text-[10px] uppercase tracking-[0.3em] text-[var(--text-primary)]">
                 {{ selectedIds().length > 1 ? 'GROUP (' + selectedIds().length + ')' : 'PROPERTIES' }}
               </h3>
             </div>
-            <button (click)="selectedIds.set([])" class="p-2 hover:bg-[#1a1a1a] rounded-xl text-neutral-600 transition-colors">
+            <button
+              (click)="selectedIds.set([])"
+              class="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)] transition-colors"
+            >
               <app-icon name="x" size="18"></app-icon>
             </button>
           </div>
@@ -863,11 +854,13 @@ export class IconComponent implements OnInit {
             @if (selectedIds().length === 1 && selectedComp(); as comp) {
               <section class="space-y-6">
                 <div>
-                  <label class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] block mb-3">Annotation Tag</label>
-                  <div class="bg-black border border-[#1a1a1a] rounded-2xl px-4 py-3.5 flex items-center gap-3 focus-within:border-neutral-500">
-                    <app-icon name="type" size="14" class="text-neutral-700"></app-icon>
+                  <label class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] block mb-3">Annotation Tag</label>
+                  <div
+                    class="bg-[var(--input-bg)] border border-[var(--input-border)] rounded-2xl px-4 py-3.5 flex items-center gap-3 focus-within:border-[var(--hover-border)]"
+                  >
+                    <app-icon name="type" size="14" class="text-[var(--text-dim)]"></app-icon>
                     <input
-                      class="w-full bg-transparent outline-none font-bold text-xs text-white"
+                      class="w-full bg-transparent outline-none font-bold text-xs text-[var(--input-text)]"
                       [ngModel]="comp.label"
                       (ngModelChange)="updateLabel($event)"
                     />
@@ -876,7 +869,7 @@ export class IconComponent implements OnInit {
 
                 @if (['breaker', 'isolator', 'earth_switch'].includes(comp.type)) {
                   <div>
-                    <label class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] block mb-2 flex items-center gap-2">
+                    <label class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] block mb-2 flex items-center gap-2">
                       <app-icon name="power" size="14"></app-icon>
                       Operational State
                     </label>
@@ -896,21 +889,21 @@ export class IconComponent implements OnInit {
 
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] block mb-2">Scale</label>
+                    <label class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] block mb-2">Scale</label>
                     <input
                       type="number"
                       step="0.1"
-                      class="w-full bg-black border border-[#1a1a1a] rounded-xl p-3 text-xs font-bold text-white outline-none"
+                      class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl p-3 text-xs font-bold text-[var(--input-text)] outline-none"
                       [ngModel]="comp.scale.toFixed(1)"
                       (ngModelChange)="updateScale($event)"
                     />
                   </div>
                   @if (comp.type === 'busbar' || comp.type === 'line') {
                     <div>
-                      <label class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] block mb-2">Length</label>
+                      <label class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] block mb-2">Length</label>
                       <input
                         type="number"
-                        class="w-full bg-black border border-[#1a1a1a] rounded-xl p-3 text-xs font-bold text-white outline-none"
+                        class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded-xl p-3 text-xs font-bold text-[var(--input-text)] outline-none"
                         [ngModel]="round(comp.length || 0)"
                         (ngModelChange)="updateLength($event)"
                       />
@@ -920,7 +913,7 @@ export class IconComponent implements OnInit {
               </section>
 
               <section>
-                <label class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] block mb-4 flex items-center gap-2">
+                <label class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] block mb-4 flex items-center gap-2">
                   <app-icon name="link2" size="14"></app-icon>
                   Active Topology
                 </label>
@@ -929,32 +922,34 @@ export class IconComponent implements OnInit {
                     @for (conn of activeTopology(); track conn.id) {
                       <button
                         (click)="selectedIds.set([conn.id])"
-                        class="w-full flex items-center justify-between p-4 border rounded-2xl transition-all text-left bg-black border-[#1a1a1a] hover:border-blue-500 group shadow-sm"
+                        class="w-full flex items-center justify-between p-4 border rounded-2xl transition-all text-left bg-[var(--panel-muted)] border-[var(--panel-border)] hover:border-[var(--accent)] group shadow-sm"
                       >
                         <div class="flex items-center gap-4">
-                          <div class="p-2 bg-[#0a0a0a] rounded-xl text-neutral-600 group-hover:text-blue-500 transition-colors">
+                          <div
+                            class="p-2 bg-[var(--panel-bg)] rounded-xl text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
+                          >
                             <ng-container *ngTemplateOutlet="sidebarIcon; context: { $implicit: conn.type }"></ng-container>
                           </div>
                           <div>
-                            <p class="text-[10px] font-black text-neutral-300 uppercase tracking-tighter">{{ conn.label }}</p>
-                            <p class="text-[8px] font-bold text-blue-600 uppercase">{{ conn.relation }}</p>
+                            <p class="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-tighter">{{ conn.label }}</p>
+                            <p class="text-[8px] font-bold text-[var(--accent)] uppercase">{{ conn.relation }}</p>
                           </div>
                         </div>
                         <div class="flex items-center gap-2">
                           <div
                             (click)="detachComponent(conn.id); $event.stopPropagation()"
-                            class="p-2 text-neutral-600 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                            class="p-2 text-[var(--text-muted)] hover:text-[var(--danger-text)] hover:bg-[var(--danger-bg)] rounded-full transition-colors"
                             title="Disconnect"
                           >
                             <app-icon name="unlink" size="14"></app-icon>
                           </div>
-                          <app-icon name="chevronRight" size="14" class="text-neutral-700 group-hover:text-white"></app-icon>
+                          <app-icon name="chevronRight" size="14" class="text-[var(--text-dim)] group-hover:text-[var(--text-primary)]"></app-icon>
                         </div>
                       </button>
                     }
                   } @else {
-                    <div class="p-10 border border-dashed border-[#1a1a1a] rounded-3xl text-center bg-[#050505]">
-                      <p class="text-[8px] font-black uppercase text-neutral-700 tracking-[0.2em]">Disconnected Node</p>
+                    <div class="p-10 border border-dashed border-[var(--panel-border)] rounded-3xl text-center bg-[var(--panel-muted)]">
+                      <p class="text-[8px] font-black uppercase text-[var(--text-dim)] tracking-[0.2em]">Disconnected Node</p>
                     </div>
                   }
                 </div>
@@ -964,7 +959,7 @@ export class IconComponent implements OnInit {
             <!-- Common Properties -->
             <section class="space-y-6">
               <div>
-                <label class="text-[9px] font-black text-neutral-600 uppercase tracking-[0.2em] block mb-4 flex items-center gap-2">
+                <label class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] block mb-4 flex items-center gap-2">
                   <app-icon name="palette" size="14"></app-icon>
                   {{ selectedIds().length > 1 ? 'Bulk Color' : 'Color System' }}
                 </label>
@@ -976,8 +971,8 @@ export class IconComponent implements OnInit {
                       [ngStyle]="{ backgroundColor: c }"
                       [ngClass]="
                         selectedIds().length === 1 && selectedComp()?.color === c
-                          ? 'border-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.2)]'
-                          : 'border-[#1a1a1a] hover:border-neutral-600'
+                          ? 'border-[var(--app-text)] scale-125 shadow-[0_0_10px_rgba(0,0,0,0.15)]'
+                          : 'border-[var(--panel-border)] hover:border-[var(--hover-border)]'
                       "
                     ></button>
                   }
@@ -985,24 +980,24 @@ export class IconComponent implements OnInit {
               </div>
             </section>
 
-            <section class="pt-6 border-t border-[#1a1a1a] grid grid-cols-2 gap-3">
+            <section class="pt-6 border-t border-[var(--panel-border)] grid grid-cols-2 gap-3">
               <button
                 (click)="rotateSelected()"
-                class="flex items-center justify-center gap-2 py-4 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 bg-black text-neutral-400 border border-[#1a1a1a] hover:text-white hover:border-neutral-500"
+                class="flex items-center justify-center gap-2 py-4 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 bg-[var(--panel-muted)] text-[var(--text-muted)] border border-[var(--panel-border)] hover:text-[var(--text-primary)] hover:border-[var(--hover-border)]"
               >
                 <app-icon name="rotateCw" size="14"></app-icon>
                 Group Pivot
               </button>
               <button
                 (click)="duplicateSelected()"
-                class="flex items-center justify-center gap-2 py-4 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 bg-black text-neutral-400 border border-[#1a1a1a] hover:text-white hover:border-neutral-500"
+                class="flex items-center justify-center gap-2 py-4 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 bg-[var(--panel-muted)] text-[var(--text-muted)] border border-[var(--panel-border)] hover:text-[var(--text-primary)] hover:border-[var(--hover-border)]"
               >
                 <app-icon name="copy" size="14"></app-icon>
                 Duplicate
               </button>
               <button
                 (click)="deleteSelected()"
-                class="col-span-2 flex items-center justify-center gap-2 py-4 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 bg-[#260000] text-red-500 border border-red-900 hover:bg-red-600 hover:text-white"
+                class="col-span-2 flex items-center justify-center gap-2 py-4 text-[9px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 bg-[var(--danger-bg)] text-[var(--danger-text)] border border-[var(--danger-border)] hover:bg-[var(--danger-text)] hover:text-white"
               >
                 <app-icon name="trash2" size="14"></app-icon>
                 Wipe Selection
@@ -1075,6 +1070,50 @@ export class IconComponent implements OnInit {
     `
       :host {
         display: block;
+      }
+      :host .theme-dark {
+        --app-bg: #000000;
+        --app-text: #f5f5f5;
+        --panel-bg: #0a0a0a;
+        --panel-border: #1a1a1a;
+        --panel-muted: #050505;
+        --text-primary: #f5f5f5;
+        --text-secondary: #cbd5e1;
+        --text-muted: #a3a3a3;
+        --text-dim: #737373;
+        --input-bg: #000000;
+        --input-border: #1a1a1a;
+        --input-text: #f5f5f5;
+        --hover-bg: #1a1a1a;
+        --hover-border: #525252;
+        --accent: #3b82f6;
+        --accent-soft: rgba(59, 130, 246, 0.12);
+        --danger-bg: #260000;
+        --danger-text: #ef4444;
+        --danger-border: #7f1d1d;
+        --ring: #525252;
+      }
+      :host .theme-light {
+        --app-bg: #f8fafc;
+        --app-text: #0f172a;
+        --panel-bg: #ffffff;
+        --panel-border: #e2e8f0;
+        --panel-muted: #f1f5f9;
+        --text-primary: #0f172a;
+        --text-secondary: #334155;
+        --text-muted: #64748b;
+        --text-dim: #94a3b8;
+        --input-bg: #f8fafc;
+        --input-border: #e2e8f0;
+        --input-text: #0f172a;
+        --hover-bg: #f1f5f9;
+        --hover-border: #94a3b8;
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.12);
+        --danger-bg: #fee2e2;
+        --danger-text: #b91c1c;
+        --danger-border: #fca5a5;
+        --ring: #94a3b8;
       }
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
